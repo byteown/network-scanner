@@ -1,7 +1,12 @@
 package ru.denis.networkscanner;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class Main {
     private static final String TIMEOUT_FLAG = "--timeout=";
@@ -37,29 +42,49 @@ public class Main {
 
         CidrRange cidrRange = new CidrRange(cidr);
         List<String> hosts = cidrRange.listHosts();
+
         int aliveCount = 0;
         int deadCount = 0;
         int errorCount = 0;
+        int threadPoolSize = 50;
         long timeNow = System.nanoTime();
+
+        ExecutorService executor = Executors.newFixedThreadPool(threadPoolSize);
+        List<Future<CheckResult>> futures = new ArrayList<>();
+
         for (String host : hosts) {
-            CheckResult result = HostChecker.check(host, timeoutMs);
-            String line = switch (result.status()) {
-                case ALIVE -> {
-                    aliveCount++;
-                    yield String.format("<%s> -> ALIVE (%d ms)", result.host(), result.elapsedMs());
-                }
-                case DEAD -> {
-                    deadCount++;
-                    yield String.format("<%s> -> DEAD (%d ms)", result.host(), result.elapsedMs());
-                }
-                case ERROR -> {
-                    errorCount++;
-                    yield String.format("<%s> -> ERROR: %s (%d ms)", result.host(), result.errorMessage(), result.elapsedMs());
-                }
-            };
-            System.out.println(line);
+            int finalTimeoutMs = timeoutMs;
+            Future<CheckResult> future = executor.submit(() -> HostChecker.check(host, finalTimeoutMs));
+            futures.add(future);
         }
+
+        for (Future<CheckResult> future : futures) {
+            try {
+                CheckResult result = future.get();
+                String line = switch (result.status()) {
+                    case ALIVE -> {
+                        aliveCount++;
+                        yield String.format("<%s> -> ALIVE (%d ms)", result.host(), result.elapsedMs());
+                    }
+                    case DEAD -> {
+                        deadCount++;
+                        yield String.format("<%s> -> DEAD (%d ms)", result.host(), result.elapsedMs());
+                    }
+                    case ERROR -> {
+                        errorCount++;
+                        yield String.format("<%s> -> ERROR: %s (%d ms)", result.host(), result.errorMessage(), result.elapsedMs());
+                    }
+                };
+                System.out.println(line);
+            } catch (InterruptedException | ExecutionException e) {
+                System.err.println("Task failed: " + e.getMessage());
+            }
+        }
+
+        executor.shutdown();
+
         long elapsedMs = (System.nanoTime() - timeNow) / 1_000_000;
+
         System.out.printf("%nTotal: %d / Alive: %d / Dead: %d / Errors: %d", hosts.size(), aliveCount, deadCount, errorCount);
         System.out.printf(Locale.ROOT, "%nScan completed in %.2f seconds", elapsedMs / 1000.0);
     }
