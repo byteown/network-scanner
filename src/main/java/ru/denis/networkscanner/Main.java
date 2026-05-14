@@ -36,31 +36,30 @@ public class Main {
 
         CidrRange cidrRange = new CidrRange(cidr);
         List<String> hosts = cidrRange.listHosts();
-        int alive = 0;
-        int dead = 0;
-        int error = 0;
+        int aliveCount = 0;
+        int deadCount = 0;
+        int errorCount = 0;
         long timeNow = System.nanoTime();
         for (String host : hosts) {
             CheckResult result = HostChecker.check(host, timeoutMs);
-            String line = "";
-            switch (result.status()) {
+            String line = switch (result.status()) {
                 case ALIVE -> {
-                    line = String.format("<%s> -> ALIVE (%d ms)", result.host(), result.elapsedMs());
-                    alive++;
+                    aliveCount++;
+                    yield String.format("<%s> -> ALIVE (%d ms)", result.host(), result.elapsedMs());
                 }
                 case DEAD -> {
-                    line = String.format("<%s> -> DEAD (%d ms)", result.host(), result.elapsedMs());
-                    dead++;
+                    deadCount++;
+                    yield String.format("<%s> -> DEAD (%d ms)", result.host(), result.elapsedMs());
                 }
                 case ERROR -> {
-                    line = String.format("<%s> -> ERROR: %s (%d ms)", result.host(), result.errorMessage(), result.elapsedMs());
-                    error++;
+                    errorCount++;
+                    yield String.format("<%s> -> ERROR: %s (%d ms)", result.host(), result.errorMessage(), result.elapsedMs());
                 }
-            }
+            };
             System.out.println(line);
         }
-        long elapsedTime = (System.nanoTime() - timeNow) / 1_000_000_000;
-        System.out.printf("\nTotal: %d / Alive: %d / Dead: %d / Errors: %d", hosts.size(), alive, dead, error);
-        System.out.printf("\nScan completed in %d seconds", elapsedTime);
+        long elapsedMs = (System.nanoTime() - timeNow) / 1_000_000;
+        System.out.printf("%nTotal: %d / Alive: %d / Dead: %d / Errors: %d", hosts.size(), aliveCount, deadCount, errorCount);
+        System.out.printf("%nScan completed in %.2f seconds", elapsedMs / 1000.0);
     }
 }
