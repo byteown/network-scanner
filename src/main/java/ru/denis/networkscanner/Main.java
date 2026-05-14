@@ -49,39 +49,43 @@ public class Main {
         int threadPoolSize = 50;
         long timeNow = System.nanoTime();
 
-        ExecutorService executor = Executors.newFixedThreadPool(threadPoolSize);
         List<Future<CheckResult>> futures = new ArrayList<>();
 
-        for (String host : hosts) {
-            int finalTimeoutMs = timeoutMs;
-            Future<CheckResult> future = executor.submit(() -> HostChecker.check(host, finalTimeoutMs));
-            futures.add(future);
-        }
+        try (ExecutorService executor = Executors.newFixedThreadPool(threadPoolSize)) {
+            for (String host : hosts) {
+                int finalTimeoutMs = timeoutMs;
+                Future<CheckResult> future = executor.submit(() -> HostChecker.check(host, finalTimeoutMs));
+                futures.add(future);
+            }
 
-        for (Future<CheckResult> future : futures) {
-            try {
-                CheckResult result = future.get();
-                String line = switch (result.status()) {
-                    case ALIVE -> {
-                        aliveCount++;
-                        yield String.format("<%s> -> ALIVE (%d ms)", result.host(), result.elapsedMs());
-                    }
-                    case DEAD -> {
-                        deadCount++;
-                        yield String.format("<%s> -> DEAD (%d ms)", result.host(), result.elapsedMs());
-                    }
-                    case ERROR -> {
-                        errorCount++;
-                        yield String.format("<%s> -> ERROR: %s (%d ms)", result.host(), result.errorMessage(), result.elapsedMs());
-                    }
-                };
-                System.out.println(line);
-            } catch (InterruptedException | ExecutionException e) {
-                System.err.println("Task failed: " + e.getMessage());
+            for (Future<CheckResult> future : futures) {
+                try {
+                    CheckResult result = future.get();
+                    String line = switch (result.status()) {
+                        case ALIVE -> {
+                            aliveCount++;
+                            yield String.format("<%s> -> ALIVE (%d ms)", result.host(), result.elapsedMs());
+                        }
+                        case DEAD -> {
+                            deadCount++;
+                            yield String.format("<%s> -> DEAD (%d ms)", result.host(), result.elapsedMs());
+                        }
+                        case ERROR -> {
+                            errorCount++;
+                            yield String.format("<%s> -> ERROR: %s (%d ms)", result.host(), result.errorMessage(), result.elapsedMs());
+                        }
+                    };
+                    System.out.println(line);
+                } catch (ExecutionException e) {
+                    Throwable cause = e.getCause();
+                    System.err.println("Task failed: " + cause.getMessage());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    System.err.println("Interrupted while waiting");
+                    return;
+                }
             }
         }
-
-        executor.shutdown();
 
         long elapsedMs = (System.nanoTime() - timeNow) / 1_000_000;
 
