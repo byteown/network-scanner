@@ -2,20 +2,26 @@ package ru.denis.networkscanner;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.Arrays;
 
 public class HostChecker {
     public static void main(String[] args) {
-        if (args.length == 0) {
-            System.out.println("Usage: java HostChecker <ip1> <ip2> ...");
-            return;
-        }
-
+        String[] ips = new String[args.length-1];
         int timeoutMs = 1000;
-
         int success = 0;
         int failed = 0;
 
-        for (String host : args) {
+        if (args.length == 0) {
+            System.out.println("Usage: java HostChecker --timeout=500 <ip1> <ip2> ...");
+            return;
+        } else {
+            timeoutMs = Integer.parseInt(args[0].substring(10));
+            for (int i = 1; i < args.length; i++) {
+                ips[i-1] = args[i];
+            }
+        }
+
+        for (String host : ips) {
             try {
                 long startNanos = System.nanoTime();
                 InetAddress address = InetAddress.getByName(host);
@@ -32,6 +38,6 @@ public class HostChecker {
             }
         }
 
-        System.out.println("\nTotal: "+args.length+", alive: "+success+", dead: "+failed);
+        System.out.println("\nTotal: "+ips.length+", alive: "+success+", dead: "+failed);
     }
 }
