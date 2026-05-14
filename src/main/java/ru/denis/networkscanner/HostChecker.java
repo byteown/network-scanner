@@ -8,27 +8,26 @@ public class HostChecker {
         String[] ipArr = {"8.8.8.8", "1.1.1.1", "192.168.0.1", "10.255.255.1"};
         int timeoutMs = 1000;
 
-        int total = ipArr.length;
         int success = 0;
         int failed = 0;
 
         for (String host : ipArr) {
             try {
-                long currentTime = System.currentTimeMillis();
+                long startNanos = System.nanoTime();
                 InetAddress address = InetAddress.getByName(host);
                 boolean reachable = address.isReachable(timeoutMs);
-                long pastTime = System.currentTimeMillis();
-                System.out.println("<" + host + "> -> " + (reachable ? "ALIVE" : "DEAD") + " ("+(pastTime-currentTime)+" ms)");
+                long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000;
+                System.out.printf("<%s> -> %s (%d ms)%n", host, reachable ? "ALIVE" : "DEAD", elapsedMs);
                 if (reachable) {
                     success++;
                 } else {
                     failed++;
                 }
             } catch (IOException e) {
-                System.out.println("<"+host+"> -> ERROR: "+e);
+                System.out.printf("<%s> -> ERROR: %s%n", host, e.getMessage());
             }
         }
 
-        System.out.println("\nTotal: "+total+", alive: "+success+", dead: "+failed);
+        System.out.println("\nTotal: "+ipArr.length+", alive: "+success+", dead: "+failed);
     }
 }
