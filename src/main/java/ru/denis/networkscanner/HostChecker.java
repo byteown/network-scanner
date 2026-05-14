@@ -7,10 +7,11 @@ import java.util.List;
 
 public class HostChecker {
     private static final String TIMEOUT_FLAG = "--timeout=";
+    private static final String USAGE = "Usage: java HostChecker [--timeout=ms] <ip1> <ip2> ...";
 
     public static void main(String[] args) {
         if (args.length == 0) {
-            System.out.println("Usage: java HostChecker --timeout=500 <ip1> <ip2> ...");
+            System.out.println(USAGE);
             return;
         }
 
@@ -20,11 +21,22 @@ public class HostChecker {
         int failed = 0;
 
         for (String arg : args) {
-            if (arg.contains(TIMEOUT_FLAG)) {
-                timeoutMs = Integer.parseInt(arg.substring(TIMEOUT_FLAG.length()));
+            if (arg.startsWith(TIMEOUT_FLAG)) {
+                String value = arg.substring(TIMEOUT_FLAG.length());
+                try {
+                    timeoutMs = Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                    System.out.printf("Ivalid timeout value: '%s'. Must be a number.%n", value);
+                    return;
+                }
             } else {
                 ips.add(arg);
             }
+        }
+
+        if (ips.isEmpty()) {
+            System.out.println(USAGE);
+            return;
         }
 
         for (String host : ips) {
