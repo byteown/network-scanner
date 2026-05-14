@@ -26,7 +26,7 @@ public class HostChecker {
                 try {
                     timeoutMs = Integer.parseInt(value);
                 } catch (NumberFormatException e) {
-                    System.out.printf("Ivalid timeout value: '%s'. Must be a number.%n", value);
+                    System.out.printf("Invalid timeout value: '%s'. Must be a number.%n", value);
                     return;
                 }
             } else {
