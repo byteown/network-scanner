@@ -24,7 +24,9 @@ public class CidrRange {
 
         String[] octets = baseAddress.split("\\.");
         String firstThreeOctets = octets[0]+"."+octets[1]+"."+octets[2]+".";
-        for (int i = 1; i < 255; i++) {
+        int firstHost = 1;
+        int lastHost = 254;
+        for (int i = firstHost; i <= lastHost; i++) {
             result.add(firstThreeOctets+i);
         }
 
