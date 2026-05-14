@@ -5,13 +5,17 @@ import java.net.InetAddress;
 
 public class HostChecker {
     public static void main(String[] args) {
-        String[] ipArr = {"8.8.8.8", "1.1.1.1", "192.168.0.1", "10.255.255.1"};
+        if (args.length == 0) {
+            System.out.println("Usage: java HostChecker <ip1> <ip2> ...");
+            return;
+        }
+
         int timeoutMs = 1000;
 
         int success = 0;
         int failed = 0;
 
-        for (String host : ipArr) {
+        for (String host : args) {
             try {
                 long startNanos = System.nanoTime();
                 InetAddress address = InetAddress.getByName(host);
@@ -28,6 +32,6 @@ public class HostChecker {
             }
         }
 
-        System.out.println("\nTotal: "+ipArr.length+", alive: "+success+", dead: "+failed);
+        System.out.println("\nTotal: "+args.length+", alive: "+success+", dead: "+failed);
     }
 }
