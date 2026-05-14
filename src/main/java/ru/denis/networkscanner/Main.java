@@ -1,6 +1,7 @@
 package ru.denis.networkscanner;
 
 import java.util.List;
+import java.util.Locale;
 
 public class Main {
     private static final String TIMEOUT_FLAG = "--timeout=";
@@ -60,6 +61,6 @@ public class Main {
         }
         long elapsedMs = (System.nanoTime() - timeNow) / 1_000_000;
         System.out.printf("%nTotal: %d / Alive: %d / Dead: %d / Errors: %d", hosts.size(), aliveCount, deadCount, errorCount);
-        System.out.printf("%nScan completed in %.2f seconds", elapsedMs / 1000.0);
+        System.out.printf(Locale.ROOT, "%nScan completed in %.2f seconds", elapsedMs / 1000.0);
     }
 }
